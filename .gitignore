@@ -1,0 +1,24 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+
+# Engine binary + weights (fetched by scripts/setup_engine.sh)
+engine/pikafish
+engine/*.nnue
+engine/pikafish_download.7z
+
+# Saved games (data/games/*.json)
+data/
+
+# Editor/OS
+.DS_Store
+*.swp
+
+# SDD workflow scratch (superpowers ledger/briefs/review packages)
+.superpowers/

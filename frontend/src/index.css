@@ -1,0 +1,388 @@
+:root {
+  --bg: #faf7f2;
+  --card: #fffdf8;
+  --ink: #2b2b2b;
+  --muted: #7a7a7a;
+  --line: #e3ddd1;
+  --accent: #2f6fed;
+  --red: #b3261e;
+  --board: #e8d3a3;
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  color: var(--ink);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+}
+
+/* The whole app is one non-scrolling screen: the page itself never scrolls,
+   the board shrinks to fit (see useBoardFit), and any panel that overflows
+   scrolls inside its own box so 讲解 is always visible without scrolling. */
+.app {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 20px 14px;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.app__header {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  flex: none;
+}
+.app__title { font-size: 19px; margin: 0; }
+.app__subtitle { color: var(--muted); font-size: 12.5px; margin: 0; }
+
+.layout {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: auto minmax(296px, 1.15fr) minmax(196px, 0.7fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.layout__board { display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
+
+/* 讲解 + 候选着法 — the coaching column, beside the board rather than below it. */
+.layout__teach { min-width: 0; min-height: 0; display: flex; }
+.layout__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-right: 4px;
+}
+
+.layout__side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* ---------- cards ---------- */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+}
+.card__title {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---------- banners ---------- */
+.banner { padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; }
+.banner--error { background: #fdecea; border: 1px solid #f5c6cb; }
+.banner--warn { background: #fff4e5; border: 1px solid #ffd591; }
+
+/* ---------- buttons ---------- */
+.btn {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+}
+.btn:hover:not(:disabled) { background: #f4f0e8; }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn--primary { background: #2f6fed; border-color: #2f6fed; color: #fff; }
+.btn--primary:hover:not(:disabled) { background: #2a63d4; }
+/* The armed half of 删除/确定删除 — the one action here that cannot be undone. */
+.btn--danger { background: var(--red); border-color: var(--red); color: #fff; }
+.btn--danger:hover:not(:disabled) { background: #9c1f18; }
+
+.btn-row { display: flex; gap: 8px; }
+.btn-row > .btn { flex: 1; }
+/* Three buttons in the narrow side column wrap instead of breaking a label. */
+.btn-row--wrap { flex-wrap: wrap; }
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.control-row select { font: inherit; font-size: 13px; padding: 3px 6px; border-radius: 6px; border: 1px solid var(--line); }
+
+/* The open game's 对局库 identity and whether it is being written. */
+.game__head { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.game__name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.game__save { flex: none; font-size: 11.5px; color: var(--muted); }
+.game__save--error { color: var(--red); }
+
+/* ---------- status ---------- */
+.status { font-size: 13px; line-height: 1.6; }
+.status__result { font-weight: 700; color: var(--red); }
+.status__note { color: #555; margin-top: 2px; }
+.status__browsing { color: var(--accent); margin-top: 4px; }
+.status__link { text-decoration: underline; cursor: pointer; }
+.status__paused { color: #b06f00; margin-top: 4px; }
+
+/* ---------- move list ---------- */
+/* Takes the leftover height in the side column and scrolls internally, so a
+   long game never grows the page. */
+.movelist {
+  flex: 1;
+  min-height: 90px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+}
+.movelist__empty { padding: 14px; color: var(--muted); font-size: 13px; }
+.movelist__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0ece3;
+  font-size: 13px;
+}
+.movelist__row:last-child { border-bottom: none; }
+.movelist__row:hover { background: #f7f4ed; }
+.movelist__row--current { background: #eef4ff; }
+.movelist__row--undone { opacity: 0.4; }
+.movelist__ply { color: var(--muted); width: 24px; flex: none; }
+.movelist__side { width: 18px; flex: none; font-weight: 600; }
+.movelist__side--w { color: var(--red); }
+.movelist__side--b { color: #1a1a1a; }
+.movelist__cn { flex: 1; font-size: 14px; letter-spacing: 0.5px; }
+.movelist__uci { color: #aaa; font-family: ui-monospace, monospace; font-size: 11px; }
+/* This ply carries a note; the row's tooltip holds its text. */
+.movelist__note { flex: none; color: var(--accent); font-size: 12px; }
+.badge {
+  color: #fff;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 11px;
+  min-width: 42px;
+  text-align: center;
+  flex: none;
+}
+
+/* ---------- candidates ---------- */
+.cand { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; background: #fff; }
+.cand:last-child { margin-bottom: 0; }
+.cand--best { border-color: #3aa15c; background: #f4fbf6; }
+.cand--played { border-color: var(--accent); background: #f2f6ff; }
+.cand__head { display: flex; align-items: center; gap: 8px; }
+.cand__rank {
+  width: 20px; height: 20px; border-radius: 50%; flex: none;
+  background: #ece7dc; color: #555;
+  font-size: 11px; display: flex; align-items: center; justify-content: center;
+}
+.cand--best .cand__rank { background: #3aa15c; color: #fff; }
+.cand__move { font-size: 15px; font-weight: 600; letter-spacing: 0.5px; }
+.cand__uci { color: #aaa; font-family: ui-monospace, monospace; font-size: 11px; }
+.cand__score { margin-left: auto; font-family: ui-monospace, monospace; font-size: 12px; color: #444; }
+.cand__tag { font-size: 11px; padding: 1px 6px; border-radius: 4px; background: var(--accent); color: #fff; }
+.cand__pv { margin-top: 5px; font-size: 12px; color: #666; line-height: 1.6; }
+.cand__pv-label { color: #aaa; margin-right: 4px; }
+
+/* ---------- concept panel ---------- */
+.concept__head { margin-bottom: 6px; }
+/* 记谱法 names must never break mid-word (马八 / 进七). */
+.concept__move { font-size: 15px; font-weight: 600; letter-spacing: 0.5px; white-space: nowrap; }
+.concept__tags { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+.concept__text { margin: 0; font-size: 14px; line-height: 1.8; }
+.concept__block { margin-top: 10px; padding: 9px 11px; border-radius: 7px; font-size: 13px; line-height: 1.7; }
+.concept__block--better { background: #fff6e8; border: 1px solid #ffdfae; }
+.concept__block--intent { background: #eef4ff; border: 1px solid #cdd9f2; }
+.concept__block--followup { background: #f7f7f9; border: 1px solid #e3e3e9; }
+.concept__block--opening { background: #f5f2fb; border: 1px solid #ddd5f0; }
+.concept__block-title { font-weight: 600; margin-bottom: 3px; }
+.intent__row { display: flex; gap: 6px; align-items: baseline; margin-top: 3px; }
+.intent__tag { flex: none; width: 26px; text-align: center; border-radius: 4px; font-size: 11px; font-weight: 600; padding: 1px 0; }
+.intent__tag--attack { background: #fdecea; color: #b23b2e; }
+.intent__tag--defend { background: #e8f5ec; color: #2c7a4b; }
+.intent__tag--goal { background: #eef1f6; color: #4a5b76; }
+.followup__line { font-size: 12.5px; line-height: 1.9; }
+.followup__line--pass { margin-top: 4px; color: #555; }
+.concept__placeholder { color: var(--muted); font-size: 13px; }
+.tag-opening { color: var(--muted); font-size: 12px; font-weight: 400; white-space: nowrap; }
+.tag-left-book { background: #fff0e0; color: #a5601a; border-radius: 4px; padding: 1px 6px; font-size: 11px; font-weight: 400; white-space: nowrap; }
+
+/* ---------- notes ---------- */
+.note__tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+.note__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: inherit;
+  font-size: 12.5px;
+  padding: 3px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+}
+.note__tab:hover { background: #f4f0e8; }
+.note__tab--active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.note__tab--active:hover { background: var(--accent); }
+/* 整局 carries something to read. */
+.note__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--red); flex: none; }
+.note__head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+/* 记谱法 and 第 N 步 must not break mid-word in a narrow column. */
+.note__target {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.note__jump {
+  flex: none;
+  font: inherit;
+  font-size: 10px;
+  line-height: 1.7;
+  padding: 1px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+}
+.note__jump:hover:not(:disabled) { background: #f4f0e8; }
+.note__jump:disabled { opacity: 0.35; cursor: default; }
+.note__editor {
+  display: block;
+  width: 100%;
+  min-height: 72px;
+  resize: vertical;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.7;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+}
+.note__editor:focus { outline: none; border-color: var(--accent); }
+.note__hint { color: var(--muted); font-size: 13px; line-height: 1.7; padding: 6px 0 2px; }
+.note__status { margin-left: auto; color: var(--muted); font-size: 11.5px; font-weight: 400; }
+
+/* ---------- 对局库 modal ---------- */
+/* An overlay: the page behind it is frozen at its one-screen layout, and the
+   modal scrolls its own list internally (dvh, never the page). */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+.modal {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+  padding: 16px;
+  width: min(560px, calc(100vw - 32px));
+  max-height: 80dvh;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.modal__head { display: flex; align-items: center; gap: 10px; }
+.modal__head .card__title { flex: 1; margin: 0; }
+.modal__saveas { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.modal__saveas label { flex: none; color: var(--muted); }
+.modal__input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink);
+}
+.modal__input:focus { outline: none; border-color: var(--accent); }
+.modal__error {
+  background: #fdecea;
+  border: 1px solid #f5c6cb;
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 12.5px;
+}
+.modal__list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.modal__empty { padding: 16px; color: var(--muted); font-size: 13px; }
+.modal__foot { display: flex; align-items: center; gap: 10px; }
+.modal__foot-hint { color: var(--muted); font-size: 11.5px; line-height: 1.5; }
+
+.lib__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 11px;
+  border-bottom: 1px solid #f0ece3;
+  flex-wrap: wrap;
+}
+.lib__row:last-child { border-bottom: none; }
+.lib__info { flex: 1; min-width: 130px; }
+.lib__name { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.lib__name-text {
+  font-size: 13.5px;
+  font-weight: 600;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lib__current {
+  flex: none;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 10.5px;
+}
+.lib__meta { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+.lib__result { flex: none; color: var(--muted); font-size: 11.5px; white-space: nowrap; }
+.lib__result--done { color: #555; font-weight: 600; }
+.lib__rename { flex: 1; }
+.lib__actions { flex: none; display: flex; gap: 6px; }
+.lib__actions .btn { padding: 4px 10px; font-size: 12.5px; }
